@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Simulasi Gelombang Dawai / Senar Gitar</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+        background: linear-gradient(135deg, #07111f, #0f2744);
+        color: white;
+        overflow-x: hidden;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+    }
+
+    h1 {
+        margin-bottom: 8px;
+        font-size: 2.1rem;
+        text-align: center;
+    }
+
+    .subtitle {
+        opacity: 0.8;
+        margin-bottom: 18px;
+        text-align: center;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 1200px;
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+    }
+
+    .panel {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 18px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    canvas {
+        width: 100%;
+        height: 520px;
+        background: linear-gradient(to bottom, #07111f, #081a2d);
+        border-radius: 16px;
+        border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .control-group {
+        background: rgba(255,255,255,0.05);
+        padding: 14px;
+        border-radius: 14px;
+    }
+
+    .control-group h3 {
+        margin-bottom: 10px;
+        color: #6ecbff;
+    }
+
+    label {
+        display: block;
+        margin-top: 10px;
+        margin-bottom: 5px;
+        font-size: 0.92rem;
+    }
+
+    input[type=range] {
+        width: 100%;
+        cursor: pointer;
+    }
+
+    select, button {
+        width: 100%;
+        padding: 11px;
+        border: none;
+        border-radius: 12px;
+        margin-top: 8px;
+        font-size: 0.95rem;
+    }
+
+    select {
+        background: #12314f;
+        color: white;
+    }
+
+    button {
+        background: linear-gradient(135deg, #00b7ff, #0066ff);
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.25s;
+    }
+
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(0,183,255,0.35);
+    }
+
+    .info {
+        margin-top: 10px;
+        line-height: 1.7;
+        font-size: 0.94rem;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(0,183,255,0.2);
+        color: #8ee2ff;
+        margin-top: 8px;
+        font-size: 0.85rem;
+    }
+
+    .legend {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .legend div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+    }
+
+    .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+    }
+
+    footer {
+        margin-top: 18px;
+        opacity: 0.75;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+    @media(max-width: 900px) {
+        .container {
+            grid-template-columns: 1fr;
+        }
+
+        canvas {
+            height: 420px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<h1>🎸 Simulasi Gelombang Dawai / Senar Gitar</h1>
+<div class="subtitle">
+Visualisasi gelombang stasioner pada dawai dengan harmonik, simpul (S), perut (P), dan suara real-time.
+</div>
+
+<div class="container">
+
+    <div class="panel">
+        <canvas id="canvas"></canvas>
+
+        <div class="legend">
+            <div><span class="dot" style="background:#ff5555"></span> Simpul (S)</div>
+            <div><span class="dot" style="background:#ffd95e"></span> Perut (P)</div>
+            <div><span class="dot" style="background:#00d4ff"></span> Gelombang Dawai</div>
+        </div>
+    </div>
+
+    <div class="panel controls">
+
+        <div class="control-group">
+            <h3>🎼 Harmonik</h3>
+            <select id="harmonic">
+                <option value="1">Harmonik 1</option>
+                <option value="2">Harmonik 2</option>
+                <option value="3">Harmonik 3</option>
+                <option value="4">Harmonik 4</option>
+                <option value="5">Harmonik 5</option>
+                <option value="6">Harmonik 6</option>
+            </select>
+            <div class="badge" id="modeText">Mode Dasar</div>
+        </div>
+
+        <div class="control-group">
+            <h3>⚙ Pengaturan</h3>
+
+            <label>Frekuensi Nada</label>
+            <input type="range" id="frequency" min="80" max="700" value="220">
+            <div id="freqValue">220 Hz</div>
+
+            <label>Amplitudo</label>
+            <input type="range" id="amplitude" min="20" max="120" value="70">
+            <div id="ampValue">70</div>
+
+            <label>Kecepatan Animasi</label>
+            <input type="range" id="speed" min="0.5" max="5" value="2" step="0.1">
+            <div id="speedValue">2x</div>
+        </div>
+
+        <div class="control-group">
+            <h3>🔊 Audio</h3>
+            <button id="soundBtn">Nyalakan Suara</button>
+            <button id="pluckBtn">Petik Dawai</button>
+        </div>
+
+        <div class="control-group">
+            <h3>📘 Informasi</h3>
+            <div class="info" id="infoText">
+                Harmonik 1 memiliki 2 simpul dan 1 perut.
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<footer>
+Created by dwi Yono, S.Pd Guru SMAN 1 Karanganyar
+</footer>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const harmonicEl = document.getElementById('harmonic');
+const frequencyEl = document.getElementById('frequency');
+const amplitudeEl = document.getElementById('amplitude');
+const speedEl = document.getElementById('speed');
+
+const freqValue = document.getElementById('freqValue');
+const ampValue = document.getElementById('ampValue');
+const speedValue = document.getElementById('speedValue');
+const infoText = document.getElementById('infoText');
+const modeText = document.getElementById('modeText');
+const soundBtn = document.getElementById('soundBtn');
+const pluckBtn = document.getElementById('pluckBtn');
+
+let harmonic = 1;
+let frequency = 220;
+let amplitude = 70;
+let speed = 2;
+let time = 0;
+let soundOn = false;
+
+harmonicEl.addEventListener('change', () => {
+    harmonic = parseInt(harmonicEl.value);
+    updateInfo();
+    updateSound();
+});
+
+frequencyEl.addEventListener('input', () => {
+    frequency = parseInt(frequencyEl.value);
+    freqValue.innerText = frequency + ' Hz';
+    updateSound();
+});
+
+amplitudeEl.addEventListener('input', () => {
+    amplitude = parseInt(amplitudeEl.value);
+    ampValue.innerText = amplitude;
+});
+
+speedEl.addEventListener('input', () => {
+    speed = parseFloat(speedEl.value);
+    speedValue.innerText = speed + 'x';
+});
+
+function updateInfo() {
+    const simpul = harmonic + 1;
+    const perut = harmonic;
+
+    infoText.innerHTML = `
+        Harmonik <b>${harmonic}</b><br>
+        Jumlah Simpul (S): <b>${simpul}</b><br>
+        Jumlah Perut (P): <b>${perut}</b><br><br>
+        Panjang gelombang memenuhi:<br>
+        λ = 2L / n
+    `;
+
+    modeText.innerText = harmonic === 1 ? 'Mode Dasar' : `Harmonik ke-${harmonic}`;
+}
+
+updateInfo();
+
+// ================= AUDIO =================
+let audioCtx;
+let oscillator;
+let gainNode;
+
+function startSound() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    oscillator = audioCtx.createOscillator();
+    gainNode = audioCtx.createGain();
+
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.value = frequency * harmonic;
+
+    gainNode.gain.value = 0.03;
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start();
+}
+
+function stopSound() {
+    if (oscillator) {
+        oscillator.stop();
+        oscillator.disconnect();
+        gainNode.disconnect();
+    }
+}
+
+function updateSound() {
+    if (soundOn && oscillator) {
+        oscillator.frequency.setValueAtTime(
+            frequency * harmonic,
+            audioCtx.currentTime
+        );
+    }
+}
+
+soundBtn.addEventListener('click', () => {
+    if (!soundOn) {
+        startSound();
+        soundOn = true;
+        soundBtn.innerText = 'Matikan Suara';
+    } else {
+        stopSound();
+        soundOn = false;
+        soundBtn.innerText = 'Nyalakan Suara';
+    }
+});
+
+pluckBtn.addEventListener('click', () => {
+    amplitude += 20;
+    if (amplitude > 120) amplitude = 120;
+
+    amplitudeEl.value = amplitude;
+    ampValue.innerText = amplitude;
+
+    if (soundOn && gainNode) {
+        gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.03, audioCtx.currentTime + 0.4);
+    }
+});
+
+// ================= DRAWING =================
+function drawString() {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.clearRect(0,0,w,h);
+
+    // background glow
+    const grad = ctx.createRadialGradient(w/2,h/2,100,w/2,h/2,500);
+    grad.addColorStop(0,'rgba(0,183,255,0.12)');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,w,h);
+
+    const left = 60;
+    const right = w - 60;
+    const centerY = h/2;
+    const length = right - left;
+
+    // penyangga ujung
+    ctx.fillStyle = '#999';
+    ctx.fillRect(left-10, centerY-60, 12, 120);
+    ctx.fillRect(right-2, centerY-60, 12, 120);
+
+    // garis keseimbangan
+    ctx.beginPath();
+    ctx.moveTo(left, centerY);
+    ctx.lineTo(right, centerY);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // pola selubung gelombang stasioner
+    ctx.beginPath();
+
+    for(let x = 0; x <= length; x++) {
+        const px = left + x;
+
+        const envelope = amplitude * Math.sin((harmonic * Math.PI * x) / length);
+
+        const py = centerY - envelope;
+
+        if(x === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+
+    for(let x = length; x >= 0; x--) {
+        const px = left + x;
+
+        const envelope = amplitude * Math.sin((harmonic * Math.PI * x) / length);
+
+        const py = centerY + envelope;
+
+        ctx.lineTo(px, py);
+    }
+
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,212,255,0.08)';
+    ctx.fill();
+
+    // gelombang utama
+    ctx.beginPath();
+
+    for(let x = 0; x <= length; x++) {
+        const px = left + x;
+
+        const displacement =
+            amplitude *
+            Math.sin((harmonic * Math.PI * x) / length) *
+            Math.cos(time * speed);
+
+        const py = centerY + displacement;
+
+        if(x === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+
+    ctx.strokeStyle = '#00d4ff';
+    ctx.lineWidth = 5;
+    ctx.shadowColor = '#00d4ff';
+    ctx.shadowBlur = 20;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // simpul
+    for(let i = 0; i <= harmonic; i++) {
+        const x = left + (i * length / harmonic);
+
+        ctx.beginPath();
+        ctx.arc(x, centerY, 10, 0, Math.PI*2);
+        ctx.fillStyle = '#ff4d4d';
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 17px Segoe UI';
+        ctx.fillText('S', x-5, centerY-18);
+    }
+
+    // perut
+    for(let i = 0; i < harmonic; i++) {
+        const x = left + ((i + 0.5) * length / harmonic);
+
+        const antinodeAmp = amplitude * Math.cos(time * speed);
+
+        ctx.beginPath();
+        ctx.arc(x, centerY + antinodeAmp, 11, 0, Math.PI*2);
+        ctx.fillStyle = '#ffd95e';
+        ctx.fill();
+
+        ctx.fillStyle = '#111';
+        ctx.font = 'bold 15px Segoe UI';
+        ctx.fillText('P', x-5, centerY + antinodeAmp + 5);
+    }
+
+    // label
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '16px Segoe UI';
+    ctx.fillText('Ujung Terikat', left-20, centerY+90);
+    ctx.fillText('Ujung Terikat', right-50, centerY+90);
+
+    // persamaan
+    ctx.font = 'bold 19px Segoe UI';
+    ctx.fillStyle = '#8ee2ff';
+    ctx.fillText(`Gelombang Stasioner Dawai`, 30, 40);
+
+    ctx.font = '17px Segoe UI';
+    ctx.fillText(`y = A sin(${harmonic}πx/L) cos(ωt)`, 30, 70);
+}
+
+function animate() {
+    time += 0.03;
+
+    amplitude *= 0.999;
+
+    if(amplitude < 20) amplitude = parseInt(amplitudeEl.value);
+
+    drawString();
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+
+</body>
+</html>
